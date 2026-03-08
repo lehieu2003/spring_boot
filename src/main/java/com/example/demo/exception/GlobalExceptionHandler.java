@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,6 +30,18 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
     ApiResponse<Object> response = ApiResponse.error(ex.getMessage());
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+  }
+  
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<ApiResponse<Object>> handleBadCredentialsException(BadCredentialsException ex) {
+    ApiResponse<Object> response = ApiResponse.error(ex.getMessage());
+    return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+  }
+  
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(AccessDeniedException ex) {
+    ApiResponse<Object> response = ApiResponse.error("Forbidden: You don't have permission to access this resource");
+    return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
   }
   
   @ExceptionHandler(MethodArgumentNotValidException.class)
