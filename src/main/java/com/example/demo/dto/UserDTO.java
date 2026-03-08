@@ -28,4 +28,7 @@ public class UserDTO {
   @Email(message = "Email should be valid")
   @Schema(description = "User's email address", example = "john.doe@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
   private String email;
+
+  @Schema(description = "User's role", example = "USER", accessMode = Schema.AccessMode.READ_ONLY)
+  private String role;
 }
