@@ -1,19 +1,9 @@
 package com.example.demo.service.imp;
 
-import com.example.demo.dto.AuthResponse;
-import com.example.demo.dto.LoginRequest;
-import com.example.demo.dto.RegisterRequest;
-import com.example.demo.entity.RefreshToken;
-import com.example.demo.entity.User;
-import com.example.demo.entity.enums.Role;
-import com.example.demo.exception.ResourceNotFoundException;
-import com.example.demo.repository.RefreshTokenRepository;
-import com.example.demo.repository.UserRepository;
-import com.example.demo.security.CustomUserDetailsService;
-import com.example.demo.security.JwtService;
-import com.example.demo.service.AuthService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Instant;
+import java.util.UUID;
+
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,8 +12,22 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.UUID;
+import com.example.demo.dto.AuthResponse;
+import com.example.demo.dto.LoginRequest;
+import com.example.demo.dto.RegisterRequest;
+import com.example.demo.entity.RefreshToken;
+import com.example.demo.entity.User;
+import com.example.demo.entity.enums.Role;
+import com.example.demo.exception.DuplicateResourceException;
+import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.repository.RefreshTokenRepository;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.security.CustomUserDetailsService;
+import com.example.demo.security.JwtService;
+import com.example.demo.service.AuthService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +47,7 @@ public class AuthServiceImpl implements AuthService {
     log.info("Registering new user with email: {}", request.getEmail());
 
     if (userRepository.existsByEmail(request.getEmail())) {
-      throw new IllegalArgumentException("Email already exists: " + request.getEmail());
+      throw new DuplicateResourceException("User", "email", request.getEmail());
     }
 
     User user = User.builder()
@@ -54,7 +58,12 @@ public class AuthServiceImpl implements AuthService {
         .enabled(true)
         .build();
 
-    User savedUser = userRepository.save(user);
+    User savedUser;
+    try {
+      savedUser = userRepository.save(user);
+    } catch (DataIntegrityViolationException ex) {
+      throw new DuplicateResourceException("User", "email", request.getEmail(), ex);
+    }
     log.info("User registered successfully with ID: {}", savedUser.getId());
 
     UserDetails userDetails = userDetailsService.loadUserByUsername(savedUser.getEmail());

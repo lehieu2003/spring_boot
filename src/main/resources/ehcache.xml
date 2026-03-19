@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://www.ehcache.org/v3"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:jsr107="http://www.ehcache.org/v3/jsr107"
+        xsi:schemaLocation="
+          http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core.xsd
+          http://www.ehcache.org/v3/jsr107 http://www.ehcache.org/schema/ehcache-107-ext.xsd">
+
+  <service>
+    <jsr107:defaults enable-management="true" enable-statistics="true"/>
+  </service>
+
+  <cache alias="com.example.demo.entity.User">
+    <key-type>java.lang.Long</key-type>
+    <value-type>com.example.demo.entity.User</value-type>
+    <expiry>
+      <ttl unit="minutes">30</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+
+  <cache alias="default-query-results-region">
+    <key-type>java.lang.Object</key-type>
+    <value-type>java.lang.Object</value-type>
+    <expiry>
+      <ttl unit="minutes">10</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+
+  <cache alias="default-update-timestamps-region">
+    <key-type>java.lang.Object</key-type>
+    <value-type>java.lang.Object</value-type>
+    <expiry>
+      <ttl unit="minutes">10</ttl>
+    </expiry>
+    <resources>
+      <heap unit="entries">1000</heap>
+    </resources>
+  </cache>
+</config>

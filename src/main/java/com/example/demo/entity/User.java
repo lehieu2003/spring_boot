@@ -1,14 +1,34 @@
 package com.example.demo.entity;
 
-import com.example.demo.entity.enums.Role;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
+
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
+import com.example.demo.entity.enums.Role;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users")
+@Cacheable
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "com.example.demo.entity.User")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,6 +37,7 @@ import java.time.LocalDateTime;
 @Schema(description = "User entity representing a user in the system")
 public class User {
   
+  // unique identifier for the user
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Schema(description = "Unique identifier of the user", example = "1")
