@@ -49,20 +49,22 @@ public class UserServiceImp implements UserService {
       @CacheEvict(cacheNames = CacheConfig.USERS_BY_NAME_CACHE, allEntries = true)
   })
   public UserResponse create(UserCreateRequest request) {
-    log.info("Creating new user with email: {}", request.getEmail());
+    String normalizedEmail = normalizeEmail(request.getEmail());
+    log.info("Creating new user with email: {}", normalizedEmail);
     
     // Check if email already exists
-    if (userRepository.existsByEmail(request.getEmail())) {
-      throw new DuplicateResourceException("User", "email", request.getEmail());
+    if (userRepository.existsByEmail(normalizedEmail)) {
+      throw new DuplicateResourceException("User", "email", normalizedEmail);
     }
     
     User user = userMapper.toEntity(request);
+    user.setEmail(normalizedEmail);
     user.setPassword(passwordEncoder.encode(request.getPassword()));
     User savedUser;
     try {
       savedUser = userRepository.save(user);
     } catch (DataIntegrityViolationException ex) {
-      throw new DuplicateResourceException("User", "email", request.getEmail(), ex);
+      throw new DuplicateResourceException("User", "email", normalizedEmail, ex);
     }
     log.info("User created successfully with ID: {}", savedUser.getId());
     
@@ -125,14 +127,19 @@ public class UserServiceImp implements UserService {
     User existingUser = userRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
     
+    String normalizedEmail = request.getEmail() != null ? normalizeEmail(request.getEmail()) : null;
+
     // Check if email is being changed and if new email already exists
-    if (request.getEmail() != null
-        && !existingUser.getEmail().equals(request.getEmail())
-        && userRepository.existsByEmail(request.getEmail())) {
-      throw new DuplicateResourceException("User", "email", request.getEmail());
+    if (normalizedEmail != null
+        && !existingUser.getEmail().equals(normalizedEmail)
+        && userRepository.existsByEmail(normalizedEmail)) {
+      throw new DuplicateResourceException("User", "email", normalizedEmail);
     }
     
     userMapper.updateEntityFromRequest(request, existingUser);
+    if (normalizedEmail != null) {
+      existingUser.setEmail(normalizedEmail);
+    }
     if (request.getPassword() != null) {
       existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
     }
@@ -142,7 +149,7 @@ public class UserServiceImp implements UserService {
       updatedUser = userRepository.save(existingUser);
     } catch (DataIntegrityViolationException ex) {
       throw new DuplicateResourceException("User", "email",
-          request.getEmail() != null ? request.getEmail() : existingUser.getEmail(), ex);
+          normalizedEmail != null ? normalizedEmail : existingUser.getEmail(), ex);
     }
     log.info("User updated successfully with ID: {}", id);
     
@@ -152,9 +159,10 @@ public class UserServiceImp implements UserService {
   @Override
   @Cacheable(cacheNames = CacheConfig.USERS_BY_EMAIL_CACHE, key = "#email")
   public Optional<UserResponse> findByEmail(String email) {
-    log.debug("Finding user by email: {}", email);
+    String normalizedEmail = normalizeEmail(email);
+    log.debug("Finding user by email: {}", normalizedEmail);
     
-    return userRepository.findByEmail(email)
+    return userRepository.findByEmail(normalizedEmail)
         .map(userMapper::toResponse);
   }
   
@@ -170,9 +178,10 @@ public class UserServiceImp implements UserService {
   
   @Override
   public boolean existsByEmail(String email) {
-    log.debug("Checking if email exists: {}", email);
+    String normalizedEmail = normalizeEmail(email);
+    log.debug("Checking if email exists: {}", normalizedEmail);
     
-    return userRepository.existsByEmail(email);
+    return userRepository.existsByEmail(normalizedEmail);
   }
   
   @Override
@@ -183,5 +192,9 @@ public class UserServiceImp implements UserService {
     return userRepository.findAllByOrderByNameAsc().stream()
         .map(userMapper::toResponse)
         .collect(Collectors.toList());
+  }
+
+  private String normalizeEmail(String email) {
+    return email == null ? null : email.trim().toLowerCase();
   }
 }

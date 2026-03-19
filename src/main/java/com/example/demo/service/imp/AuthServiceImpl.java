@@ -44,15 +44,16 @@ public class AuthServiceImpl implements AuthService {
   @Override
   @Transactional
   public AuthResponse register(RegisterRequest request) {
-    log.info("Registering new user with email: {}", request.getEmail());
+    String normalizedEmail = normalizeEmail(request.getEmail());
+    log.info("Registering new user with email: {}", normalizedEmail);
 
-    if (userRepository.existsByEmail(request.getEmail())) {
-      throw new DuplicateResourceException("User", "email", request.getEmail());
+    if (userRepository.existsByEmail(normalizedEmail)) {
+      throw new DuplicateResourceException("User", "email", normalizedEmail);
     }
 
     User user = User.builder()
         .name(request.getName())
-        .email(request.getEmail())
+        .email(normalizedEmail)
         .password(passwordEncoder.encode(request.getPassword()))
         .role(Role.USER)
         .enabled(true)
@@ -62,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
     try {
       savedUser = userRepository.save(user);
     } catch (DataIntegrityViolationException ex) {
-      throw new DuplicateResourceException("User", "email", request.getEmail(), ex);
+      throw new DuplicateResourceException("User", "email", normalizedEmail, ex);
     }
     log.info("User registered successfully with ID: {}", savedUser.getId());
 
@@ -76,18 +77,19 @@ public class AuthServiceImpl implements AuthService {
   @Override
   @Transactional
   public AuthResponse login(LoginRequest request) {
-    log.info("Login attempt for email: {}", request.getEmail());
+    String normalizedEmail = normalizeEmail(request.getEmail());
+    log.info("Login attempt for email: {}", normalizedEmail);
 
     try {
       authenticationManager.authenticate(
-          new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+          new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
       );
     } catch (BadCredentialsException e) {
       throw new BadCredentialsException("Invalid email or password");
     }
 
-    User user = userRepository.findByEmail(request.getEmail())
-        .orElseThrow(() -> new ResourceNotFoundException("User", "email", request.getEmail()));
+    User user = userRepository.findByEmail(normalizedEmail)
+        .orElseThrow(() -> new ResourceNotFoundException("User", "email", normalizedEmail));
 
     UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
     String accessToken = jwtService.generateAccessToken(userDetails);
@@ -144,5 +146,9 @@ public class AuthServiceImpl implements AuthService {
         .name(user.getName())
         .role(user.getRole().name())
         .build();
+  }
+
+  private String normalizeEmail(String email) {
+    return email == null ? null : email.trim().toLowerCase();
   }
 }
