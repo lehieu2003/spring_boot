@@ -1,10 +1,5 @@
 package com.example.demo.config;
 
-import com.example.demo.security.JwtAuthenticationFilter;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.example.demo.common.response.ApiResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,10 +15,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.example.demo.common.response.ApiResponse;
+import com.example.demo.security.JwtAuthenticationFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -45,14 +49,16 @@ public class SecurityConfig {
         )
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint((request, response, authException) -> {
+              log.warn("Unauthorized request to {} {}", request.getMethod(), request.getRequestURI());
               response.setStatus(401);
               response.setContentType(MediaType.APPLICATION_JSON_VALUE);
               ObjectMapper mapper = new ObjectMapper();
               mapper.registerModule(new JavaTimeModule());
-              ApiResponse<Object> body = ApiResponse.error("Unauthorized: " + authException.getMessage());
+              ApiResponse<Object> body = ApiResponse.error("Unauthorized");
               response.getWriter().write(mapper.writeValueAsString(body));
             })
             .accessDeniedHandler((request, response, accessDeniedException) -> {
+              log.warn("Access denied for {} {}", request.getMethod(), request.getRequestURI());
               response.setStatus(403);
               response.setContentType(MediaType.APPLICATION_JSON_VALUE);
               ObjectMapper mapper = new ObjectMapper();

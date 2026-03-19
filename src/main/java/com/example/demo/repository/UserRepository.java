@@ -1,6 +1,9 @@
 package com.example.demo.repository;
 
 import com.example.demo.entity.User;
+import jakarta.persistence.QueryHint;
+import org.hibernate.jpa.HibernateHints;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,6 +20,7 @@ public interface UserRepository extends BaseRepository<User, Long> {
    * @param email the email address
    * @return Optional containing the user if found
    */
+  @QueryHints(@QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "true"))
   Optional<User> findByEmail(String email);
   
   /**
@@ -24,6 +28,7 @@ public interface UserRepository extends BaseRepository<User, Long> {
    * @param name the name to search for
    * @return list of matching users
    */
+  @QueryHints(@QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "true"))
   List<User> findByNameContainingIgnoreCase(String name);
   
   /**
@@ -37,6 +42,7 @@ public interface UserRepository extends BaseRepository<User, Long> {
    * Find all users ordered by name.
    * @return list of users ordered by name
    */
+  @QueryHints(@QueryHint(name = HibernateHints.HINT_CACHEABLE, value = "true"))
   List<User> findAllByOrderByNameAsc();
   
   /**

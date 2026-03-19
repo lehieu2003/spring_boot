@@ -3,6 +3,9 @@ package com.example.demo.exception;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,11 +22,19 @@ import com.example.demo.common.response.ApiResponse;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
   
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
     ApiResponse<Object> response = ApiResponse.error(ex.getMessage());
     return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+  }
+
+  @ExceptionHandler(DuplicateResourceException.class)
+  public ResponseEntity<ApiResponse<Object>> handleDuplicateResourceException(DuplicateResourceException ex) {
+    ApiResponse<Object> response = ApiResponse.error(ex.getMessage());
+    return new ResponseEntity<>(response, HttpStatus.CONFLICT);
   }
   
   @ExceptionHandler(IllegalArgumentException.class)
@@ -31,10 +42,17 @@ public class GlobalExceptionHandler {
     ApiResponse<Object> response = ApiResponse.error(ex.getMessage());
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
   }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+    log.warn("Data integrity violation", ex);
+    ApiResponse<Object> response = ApiResponse.error("Request conflicts with existing data");
+    return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+  }
   
   @ExceptionHandler(BadCredentialsException.class)
   public ResponseEntity<ApiResponse<Object>> handleBadCredentialsException(BadCredentialsException ex) {
-    ApiResponse<Object> response = ApiResponse.error(ex.getMessage());
+    ApiResponse<Object> response = ApiResponse.error("Invalid credentials");
     return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
   }
   
@@ -59,7 +77,8 @@ public class GlobalExceptionHandler {
   
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Object>> handleGlobalException(Exception ex) {
-    ApiResponse<Object> response = ApiResponse.error("An error occurred: " + ex.getMessage());
+    log.error("Unhandled exception", ex);
+    ApiResponse<Object> response = ApiResponse.error("An internal server error occurred");
     return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

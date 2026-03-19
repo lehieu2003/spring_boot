@@ -1,0 +1,12 @@
+package com.example.demo.exception;
+
+public class DuplicateResourceException extends RuntimeException {
+
+  public DuplicateResourceException(String resourceName, String fieldName, Object fieldValue) {
+    super(String.format("%s already exists with %s: %s", resourceName, fieldName, fieldValue));
+  }
+
+  public DuplicateResourceException(String resourceName, String fieldName, Object fieldValue, Throwable cause) {
+    super(String.format("%s already exists with %s: %s", resourceName, fieldName, fieldValue), cause);
+  }
+}
