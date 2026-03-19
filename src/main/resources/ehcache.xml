@@ -11,8 +11,8 @@
   </service>
 
   <cache alias="com.example.demo.entity.User">
-    <key-type>java.lang.Long</key-type>
-    <value-type>com.example.demo.entity.User</value-type>
+    <key-type>java.lang.Object</key-type>
+    <value-type>java.lang.Object</value-type>
     <expiry>
       <ttl unit="minutes">30</ttl>
     </expiry>
